@@ -60,7 +60,7 @@ EnableTNTTracking: false # Enable tracking and recording of TNT damage
 EnableTorpedoTracking: false # Enable tracking and recording of Torpedo damage
 DisableSinkingCraftTNT: true # Disable spawning of TNT from sinking crafts
 DisableDisabledCraftTNT: false # Disable spawning of TNT from disabled crafts
-DamageTimeout: 300 # Timeout for damages in seconds
+DamageTimeout: 60 # Timeout for damages in seconds
 
 # Combat Release Tracking
 EnableCombatReleaseTracking: true # Enable tracking of combat releasing
