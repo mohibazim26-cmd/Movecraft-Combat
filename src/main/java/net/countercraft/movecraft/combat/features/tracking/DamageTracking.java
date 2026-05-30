@@ -112,7 +112,7 @@ public class DamageTracking implements Listener {
             damageRecords.put(craft, records);
         }
     }
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerVersusPlayerDamage(@NotNull org.bukkit.event.entity.EntityDamageByEntityEvent e) {
         // Controlliamo se chi riceve il danno è un giocatore
         if (!(e.getEntity() instanceof Player))
@@ -135,12 +135,12 @@ public class DamageTracking implements Listener {
 
         // Se abbiamo un attaccante valido, registriamo il danno nel sistema Movecraft
         if (attaccante != null) {
-            // Recuperiamo la nave della vittima usando il gestore di Movecraft
-            var craftVittima = net.countercraft.movecraft.craft.CraftManager.getInstance().getPlayerCraft(vittima);
+            // Recuperiamo la nave della vittima estraendola direttamente dalla mappa dei piloti di Movecraft
+            var craftVittima = net.countercraft.movecraft.craft.CraftManager.getInstance().getPilotCraftMap().get(vittima);
             
             // Se la vittima sta effettivamente pilotando una nave, attiviamo il tracciamento
             if (craftVittima instanceof PlayerCraft) {
-                Torpedo type = new Torpedo(); // <--- Usiamo l'import pulito che c'è già in cima!
+                Torpedo type = new Torpedo(); 
                 DamageRecord damageRecord = new DamageRecord(attaccante, vittima, type);
                 
                 // Lanciamo l'evento ufficiale: questo farà scattare in automatico CombatRelease!
