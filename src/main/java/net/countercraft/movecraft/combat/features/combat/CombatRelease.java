@@ -101,12 +101,16 @@ public class CombatRelease extends BukkitRunnable implements Listener {
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
             "&6&lCOMBAT &7>> &cSei entrato in combattimento! NON sloggare o rilasciare veicoli."));
             
+        // Calcola i secondi iniziali dinamici (es. prendendoli direttamente dal timeout della config)
+        long initialSeconds = DamageTracking.DamageTimeout;
+
         org.bukkit.boss.BossBar bossBar = Bukkit.createBossBar(
-            ChatColor.translateAlternateColorCodes('&', "&c&lMODALITÀ COMBATTIMENTO"), 
+            ChatColor.translateAlternateColorCodes('&', "&4&l" + initialSeconds + " secondi &frimanenti in combattimento"), 
             org.bukkit.boss.BarColor.RED, 
             org.bukkit.boss.BarStyle.SEGMENTED_12
         );
         
+        bossBar.setProgress(1.0); // Parte piena al 100%
         bossBar.addPlayer(player);
         combatBars.put(player, bossBar);
 
@@ -227,7 +231,7 @@ public class CombatRelease extends BukkitRunnable implements Listener {
         // Logica svuotata volontariamente: il pilota NON esce dal combattimento se la nave affonda.
     }
 
-@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftDamagedBy(@NotNull CraftDamagedByEvent e) {
         if (!EnableCombatReleaseTracking)
             return;
@@ -247,7 +251,6 @@ public class CombatRelease extends BukkitRunnable implements Listener {
 
         // 2. Applica il combat log a chi ha CAUSATO il danno (l'attaccante)
         if (e.getDamageRecord() != null && e.getDamageRecord().getCause() != null) {
-            // getCause() restituisce un OfflinePlayer, verifichiamo che sia effettivamente online
             org.bukkit.OfflinePlayer offlineAttacker = e.getDamageRecord().getCause();
             if (offlineAttacker.isOnline()) {
                 Player attaccante = offlineAttacker.getPlayer();
