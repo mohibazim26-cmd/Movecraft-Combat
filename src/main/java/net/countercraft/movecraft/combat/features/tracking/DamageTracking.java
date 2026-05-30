@@ -102,6 +102,7 @@ public class DamageTracking implements Listener {
         DamageRecord damageRecord = e.getDamageRecord();
         PlayerCraft craft = (PlayerCraft) e.getCraft();
 
+        // Salva il record del danno nella mappa interna del plugin
         if (damageRecords.containsKey(craft)) {
             List<DamageRecord> records = damageRecords.get(craft);
             records.add(damageRecord);
@@ -111,6 +112,15 @@ public class DamageTracking implements Listener {
             records.add(damageRecord);
             damageRecords.put(craft, records);
         }
-    }
 
+        // Forza il Combat Cooldown per chi attacca (anche a piedi se usa un cannone o TNT)
+        if (damageRecord.getDamager() instanceof Player) {
+            Player attaccante = (Player) damageRecord.getDamager();
+            
+            if (attaccante.isOnline()) {
+                // Richiama direttamente il metodo statico per far partire la bossbar e il timer
+                CombatRelease.startCombat(attaccante);
+            }
+        }
+    }
 }
