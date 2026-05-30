@@ -35,8 +35,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static net.countercraft.movecraft.util.ChatUtils.ERROR_PREFIX;
-
 public class CombatRelease extends BukkitRunnable implements Listener {
     public static boolean EnableCombatReleaseTracking = false;
     public static boolean EnableCombatReleaseKick = true;
@@ -51,46 +49,39 @@ public class CombatRelease extends BukkitRunnable implements Listener {
         CombatReleaseBanLength = config.getLong("CombatReleaseBanLength", 60);
         CombatReleaseScuttle = config.getBoolean("CombatReleaseScuttle", true);
     }
-@Override
-public void run() {
-    long currentTime = System.currentTimeMillis();
-    HashSet<Player> removeSet = new HashSet<>();
-    long timeoutMillis = DamageTracking.DamageTimeout * 1000L;
 
-    for (var entry : records.entrySet()) {
-        Player player = entry.getKey();
-        long lastDamageTime = entry.getValue();
-        long timeElapsed = currentTime - lastDamageTime;
+    @Override
+    public void run() {
+        long currentTime = System.currentTimeMillis();
+        HashSet<Player> removeSet = new HashSet<>();
+        long timeoutMillis = DamageTracking.DamageTimeout * 1000L;
 
-        // Se il tempo è scaduto, segnamo il giocatore per rimuoverlo dal combat
-        if (timeElapsed > timeoutMillis) {
-            removeSet.add(player);
-        } else {
-            // Se è ancora in combat, aggiorniamo la sua BossBar
-            org.bukkit.boss.BossBar bossBar = combatBars.get(player);
-            if (bossBar != null) {
-                // Calcoliamo quanti secondi rimangono
-                long secondsLeft = (timeoutMillis - timeElapsed) / 1000L;
-                
-                // Aggiorniamo il titolo della barra con la tua stringa
-                bossBar.setTitle(ChatColor.translateAlternateColorCodes('&', 
-                    "&4&l" + secondsLeft + "rimanenti &fin combattimento" ));
-                
-                // Calcoliamo la percentuale della barra (da 1.0 a 0.0)
-                double progress = (double) (timeoutMillis - timeElapsed) / timeoutMillis;
-                // Evitiamo errori di calcolo che mandano la barra sotto lo 0 o sopra 1
-                bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
+        for (var entry : records.entrySet()) {
+            Player player = entry.getKey();
+            long lastDamageTime = entry.getValue();
+            long timeElapsed = currentTime - lastDamageTime;
+
+            if (timeElapsed > timeoutMillis) {
+                removeSet.add(player);
+            } else {
+                org.bukkit.boss.BossBar bossBar = combatBars.get(player);
+                if (bossBar != null) {
+                    long secondsLeft = (timeoutMillis - timeElapsed) / 1000L;
+                    
+                    bossBar.setTitle(ChatColor.translateAlternateColorCodes('&', 
+                        "&4&l" + secondsLeft + " secondi &frimanenti in combattimento" ));
+                    
+                    double progress = (double) (timeoutMillis - timeElapsed) / timeoutMillis;
+                    bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
+                }
             }
         }
-    }
 
-    // Rimuoviamo i giocatori che hanno esaurito il cooldown
-    for (Player player : removeSet) {
-        stopCombat(player);
-        records.remove(player);
+        for (Player player : removeSet) {
+            stopCombat(player);
+            records.remove(player);
+        }
     }
-}
-
 
     public boolean isInCombat(Player player) {
         if (!EnableCombatReleaseTracking)
@@ -101,43 +92,40 @@ public void run() {
         return System.currentTimeMillis() - records.get(player) < DamageTracking.DamageTimeout * 1000L;
     }
 
-   private void startCombat(@NotNull Player player) {
-    if (isInCombat(player))
-        return;
+    private void startCombat(@NotNull Player player) {
+        if (isInCombat(player))
+            return;
 
-    Bukkit.getPluginManager().callEvent(new CombatStartEvent(player));
-    
-// Messaggio generale di avviso in chat
-    player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-        "&6&lCOMBAT &7>> &cSei entrato in combattimento! NON sloggare o rilasciare veicoli."));
-       // BossBar pulita e diretta
-    org.bukkit.boss.BossBar bossBar = Bukkit.createBossBar(
-        ChatColor.translateAlternateColorCodes('&', "&c&lMODALITÀ COMBATTIMENTO"), 
-        org.bukkit.boss.BarColor.RED, 
-        org.bukkit.boss.BarStyle.SEGMENTED_12
-    );
-    
-    bossBar.addPlayer(player);
-    combatBars.put(player, bossBar);
+        Bukkit.getPluginManager().callEvent(new CombatStartEvent(player));
+        
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
+            "&6&lCOMBAT &7>> &cSei entrato in combattimento! NON sloggare o rilasciare veicoli."));
+            
+        org.bukkit.boss.BossBar bossBar = Bukkit.createBossBar(
+            ChatColor.translateAlternateColorCodes('&', "&c&lMODALITÀ COMBATTIMENTO"), 
+            org.bukkit.boss.BarColor.RED, 
+            org.bukkit.boss.BarStyle.SEGMENTED_12
+        );
+        
+        bossBar.addPlayer(player);
+        combatBars.put(player, bossBar);
 
-    MovecraftCombat.getInstance().getLogger().info(player.getName() + " è entrato in combattimento.");
-}
-
-  private void stopCombat(@NotNull Player player) {
-    Bukkit.getPluginManager().callEvent(new CombatStopEvent(player));
-    
-    // Messaggio di uscita
-    player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-        "&2&lCOMBAT &7>> &aSei fuori dal combattimento."));
-
-    // Rimozione della BossBar
-    org.bukkit.boss.BossBar bossBar = combatBars.remove(player);
-    if (bossBar != null) {
-        bossBar.removeAll();
+        MovecraftCombat.getInstance().getLogger().info(player.getName() + " è entrato in combattimento.");
     }
 
-    MovecraftCombat.getInstance().getLogger().info(player.getName() + " è uscito dal combattimento.");
-}
+    private void stopCombat(@NotNull Player player) {
+        Bukkit.getPluginManager().callEvent(new CombatStopEvent(player));
+        
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
+            "&2&lCOMBAT &7>> &aSei fuori dal combattimento."));
+
+        org.bukkit.boss.BossBar bossBar = combatBars.remove(player);
+        if (bossBar != null) {
+            bossBar.removeAll();
+        }
+
+        MovecraftCombat.getInstance().getLogger().info(player.getName() + " è uscito dal combattimento.");
+    }
 
     private boolean canManOverboard(Player player, @NotNull Craft craft) {
         if (craft.getDisabled())
@@ -148,7 +136,6 @@ public void run() {
         Location telPoint = MovecraftLocation.toBukkit(craft.getWorld(), craft.getHitBox().getMidPoint());
         return telPoint.distanceSquared(player.getLocation()) < Settings.ManOverboardDistSquared;
     }
-
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftRelease(@NotNull CraftReleaseEvent e) {
@@ -224,7 +211,7 @@ public void run() {
         if (e.getCraft() instanceof PilotedCraft) {
             Player pilot = ((PilotedCraft) e.getCraft()).getPilot();
             if (pilot != cause)
-                return; // Always let /scuttle [player] run.
+                return;
         }
 
         if (!isInCombat(cause))
@@ -237,15 +224,7 @@ public void run() {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftSink(@NotNull CraftSinkEvent e) {
-        if (!EnableCombatReleaseTracking)
-            return;
-        if (!(e.getCraft() instanceof PlayerCraft))
-            return;
-
-
-        Player player = ((PlayerCraft) e.getCraft()).getPilot();
-        records.remove(player);
-        stopCombat(player);
+        // Logica svuotata volontariamente: il pilota NON esce dal combattimento se la nave affonda.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -253,12 +232,29 @@ public void run() {
         if (!EnableCombatReleaseTracking)
             return;
 
-        Player player = ((PlayerCraft) e.getCraft()).getPilot();
-        if (!records.containsKey(player)
-                || System.currentTimeMillis() - records.get(player) > DamageTracking.DamageTimeout * 1000L)
-            startCombat(player);
+        long tempoAttuale = System.currentTimeMillis();
 
-        records.put(player, System.currentTimeMillis());
+        // 1. Applica il combat log al PILOTA della nave subente
+        if (e.getCraft() instanceof PlayerCraft) {
+            Player pilotavittima = ((PlayerCraft) e.getCraft()).getPilot();
+            if (pilotavittima != null) {
+                if (!records.containsKey(pilotavittima) || tempoAttuale - records.get(pilotavittima) > DamageTracking.DamageTimeout * 1000L) {
+                    startCombat(pilotavittima);
+                }
+                records.put(pilotavittima, tempoAttuale);
+            }
+        }
+
+        // 2. Applica il combat log all'ATTACCANTE (Sia esso un pilota o un player a piedi con cannone/TNT)
+        if (e.getDamageRecord() != null && e.getDamageRecord().getDamager() instanceof Player) {
+            Player attaccante = (Player) e.getDamageRecord().getDamager();
+            if (attaccante != null && attaccante.isOnline()) {
+                if (!records.containsKey(attaccante) || tempoAttuale - records.get(attaccante) > DamageTracking.DamageTimeout * 1000L) {
+                    startCombat(attaccante);
+                }
+                records.put(attaccante, tempoAttuale);
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
