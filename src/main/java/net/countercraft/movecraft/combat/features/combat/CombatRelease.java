@@ -74,7 +74,7 @@ public void run() {
                 
                 // Aggiorniamo il titolo della barra con la tua stringa
                 bossBar.setTitle(ChatColor.translateAlternateColorCodes('&', 
-                    "&c&l" + secondsLeft + " Secondi rimanenti in combattimento"));
+                    "&c&lCombat: &e" + secondsLeft + "s &crimanenti"));
                 
                 // Calcoliamo la percentuale della barra (da 1.0 a 0.0)
                 double progress = (double) (timeoutMillis - timeElapsed) / timeoutMillis;
@@ -107,13 +107,13 @@ public void run() {
 
     Bukkit.getPluginManager().callEvent(new CombatStartEvent(player));
     
-    // Il tuo messaggio personalizzato all'entrata in combattimento
+// Messaggio generale di avviso in chat
     player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-        "&6&lTEST >> &4Attenzione &7- &cSei entrato in combattimento, non puoi rilasciare il tuo veicolo in combattimento!"));
+        "&6&lCOMBAT &7>> &cSei entrato in combattimento! NON sloggare o rilasciare veicoli."));
 
-    // Creiamo la BossBar Rossa e a blocchi (SEGMENTED_10 o 12 dà l'idea del tempo)
+    // BossBar pulita e diretta
     org.bukkit.boss.BossBar bossBar = Bukkit.createBossBar(
-        ChatColor.RED + "In Combattimento", 
+        ChatColor.translateAlternateColorCodes('&', "&4&lMODALITÀ COMBATTIMENTO"), 
         org.bukkit.boss.BarColor.RED, 
         org.bukkit.boss.BarStyle.SEGMENTED_12
     );
@@ -123,12 +123,56 @@ public void run() {
 
     MovecraftCombat.getInstance().getLogger().info(player.getName() + " è entrato in combattimento.");
 }
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerVersusPlayerDamage(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!EnableCombatReleaseTracking)
+            return;
+
+        // Condizione 1: Chi riceve il danno deve essere un Player
+        if (!(e.getEntity() instanceof Player))
+            return;
+
+        Player vittima = (Player) e.getEntity();
+        Player attaccante = null;
+
+        // Condizione 2: Chi fa il danno deve essere un Player (colpo diretto)
+        if (e.getDamager() instanceof Player) {
+            attaccante = (Player) e.getDamager();
+        } 
+        // Oppure chi fa il danno è un proiettile sparato da un Player (frecce, palle di cannone, ecc.)
+        else if (e.getDamager() instanceof org.bukkit.entity.Projectile) {
+            org.bukkit.entity.Projectile proiettile = (org.bukkit.entity.Projectile) e.getDamager();
+            if (proiettile.getShooter() instanceof Player) {
+                attaccante = (Player) proiettile.getShooter();
+            }
+        }
+
+        // Condizione Finale: Se abbiamo sia una vittima Player che un attaccante Player
+        if (attaccante != null) {
+            long tempoAttuale = System.currentTimeMillis();
+
+            // Attiva il cooldown alla VITTIMA (che sia pilota o no, come hai chiesto)
+            if (!records.containsKey(vittima) || tempoAttuale - records.get(vittima) > DamageTracking.DamageTimeout * 1000L) {
+                startCombat(vittima);
+            }
+            records.put(vittima, tempoAttuale);
+
+            // Attiva il cooldown all'ATTACCANTE (che sia pilota o no)
+            if (attaccante.isOnline()) {
+                if (!records.containsKey(attaccante) || tempoAttuale - records.get(attaccante) > DamageTracking.DamageTimeout * 1000L) {
+                    startCombat(attaccante);
+                }
+                records.put(attaccante, tempoAttuale);
+            }
+        }
+    }
 
   private void stopCombat(@NotNull Player player) {
     Bukkit.getPluginManager().callEvent(new CombatStopEvent(player));
     
     // Messaggio di uscita
-    player.sendMessage(ChatColor.GREEN + "Sei fuori dal combattimento. Ora puoi gestire liberamente il tuo veicolo.");
+    player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
+        "&2&lCOMBAT &7>> &aSei fuori dal combattimento. Ora puoi disconnetterti o rilasciare i veicoli in sicurezza."));
 
     // Rimozione della BossBar
     org.bukkit.boss.BossBar bossBar = combatBars.remove(player);
@@ -231,7 +275,8 @@ public void run() {
             return;
 
         e.setCancelled(true);
-        cause.sendMessage(ERROR_PREFIX + " You may not scuttle while in combat!");
+        cause.sendMessage(ChatColor.translateAlternateColorCodes('&', 
+            "&6&lCOMBAT &7>> &cNon puoi far affondare il veicolo mentre sei in combattimento!"));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
