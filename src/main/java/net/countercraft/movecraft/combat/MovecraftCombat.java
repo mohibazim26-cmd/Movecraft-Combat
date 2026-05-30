@@ -93,7 +93,7 @@ public final class MovecraftCombat extends JavaPlugin {
         // Register features
         var combatRelease = new CombatRelease();
         getServer().getPluginManager().registerEvents(combatRelease, this);
-        combatRelease.runTaskTimer(this, 0, 200); // Every 10 seconds
+        combatRelease.runTaskTimer(this, 0, 20); // Every 10 seconds
 
         var aaDirectors = new AADirectors();
         getServer().getPluginManager().registerEvents(aaDirectors, this);
