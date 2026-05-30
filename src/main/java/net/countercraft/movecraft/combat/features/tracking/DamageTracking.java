@@ -136,11 +136,11 @@ public class DamageTracking implements Listener {
         // Se abbiamo un attaccante valido, registriamo il danno nel sistema Movecraft
         if (attaccante != null) {
             // Recuperiamo la nave della vittima usando il gestore di Movecraft
-            var craftVittima = net.countercraft.movecraft.craft.CraftManager.getInstance().getCraftByPilot(vittima);
+            var craftVittima = net.countercraft.movecraft.craft.CraftManager.getInstance().getPlayerCraft(vittima);
             
             // Se la vittima sta effettivamente pilotando una nave, attiviamo il tracciamento
             if (craftVittima instanceof PlayerCraft) {
-                var type = new net.countercraft.movecraft.combat.features.tracking.types.Torpedo(); // Usiamo un tipo generico per il record
+                Torpedo type = new Torpedo(); // <--- Usiamo l'import pulito che c'è già in cima!
                 DamageRecord damageRecord = new DamageRecord(attaccante, vittima, type);
                 
                 // Lanciamo l'evento ufficiale: questo farà scattare in automatico CombatRelease!
