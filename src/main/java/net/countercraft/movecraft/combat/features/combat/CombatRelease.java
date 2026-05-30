@@ -227,7 +227,7 @@ public class CombatRelease extends BukkitRunnable implements Listener {
         // Logica svuotata volontariamente: il pilota NON esce dal combattimento se la nave affonda.
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraftDamagedBy(@NotNull CraftDamagedByEvent e) {
         if (!EnableCombatReleaseTracking)
             return;
@@ -245,9 +245,9 @@ public class CombatRelease extends BukkitRunnable implements Listener {
             }
         }
 
-        // 2. Applica il combat log all'ATTACCANTE (Sia esso un pilota o un player a piedi con cannone/TNT)
-        if (e.getDamageRecord() != null && e.getDamageRecord().getDamager() instanceof Player) {
-            Player attaccante = (Player) e.getDamageRecord().getDamager();
+        // 2. Applica il combat log all'ATTACCANTE (usa getAttacker() invece di getDamager())
+        if (e.getDamageRecord() != null && e.getDamageRecord().getAttacker() instanceof Player) {
+            Player attaccante = (Player) e.getDamageRecord().getAttacker();
             if (attaccante != null && attaccante.isOnline()) {
                 if (!records.containsKey(attaccante) || tempoAttuale - records.get(attaccante) > DamageTracking.DamageTimeout * 1000L) {
                     startCombat(attaccante);
