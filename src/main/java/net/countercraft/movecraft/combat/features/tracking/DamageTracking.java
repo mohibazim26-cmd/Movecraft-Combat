@@ -26,7 +26,7 @@ public class DamageTracking implements Listener {
     public static boolean EnableTorpedoTracking = false;
     public static boolean DisableSinkingCraftTNT = true;
     public static boolean DisableDisabledCraftTNT = false;
-    public static int DamageTimeout = 300;
+    public static int DamageTimeout = 60;
     private final Map<PlayerCraft, List<DamageRecord>> damageRecords = new HashMap<>();
 
     public static void load(@NotNull FileConfiguration config) {
