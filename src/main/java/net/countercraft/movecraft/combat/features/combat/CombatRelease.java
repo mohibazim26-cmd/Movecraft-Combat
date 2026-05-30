@@ -245,14 +245,18 @@ public class CombatRelease extends BukkitRunnable implements Listener {
             }
         }
 
-        // 2. Applica il combat log all'ATTACCANTE (usa getAttacker() invece di getDamager())
-        if (e.getDamageRecord() != null && e.getDamageRecord().getAttacker() instanceof Player) {
-            Player attaccante = (Player) e.getDamageRecord().getAttacker();
-            if (attaccante != null && attaccante.isOnline()) {
-                if (!records.containsKey(attaccante) || tempoAttuale - records.get(attaccante) > DamageTracking.DamageTimeout * 1000L) {
-                    startCombat(attaccante);
+        // 2. Applica il combat log a chi ha CAUSATO il danno (l'attaccante)
+        if (e.getDamageRecord() != null && e.getDamageRecord().getCause() != null) {
+            // getCause() restituisce un OfflinePlayer, verifichiamo che sia effettivamente online
+            org.bukkit.OfflinePlayer offlineAttacker = e.getDamageRecord().getCause();
+            if (offlineAttacker.isOnline()) {
+                Player attaccante = offlineAttacker.getPlayer();
+                if (attaccante != null) {
+                    if (!records.containsKey(attaccante) || tempoAttuale - records.get(attaccante) > DamageTracking.DamageTimeout * 1000L) {
+                        startCombat(attaccante);
+                    }
+                    records.put(attaccante, tempoAttuale);
                 }
-                records.put(attaccante, tempoAttuale);
             }
         }
     }
