@@ -110,6 +110,15 @@ public void run() {
 // Messaggio generale di avviso in chat
     player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
         "&6&lCOMBAT &7>> &cSei entrato in combattimento! NON sloggare o rilasciare veicoli."));
+       // BossBar pulita e diretta
+    org.bukkit.boss.BossBar bossBar = Bukkit.createBossBar(
+        ChatColor.translateAlternateColorCodes('&', "&c&lMODALITÀ COMBATTIMENTO"), 
+        org.bukkit.boss.BarColor.RED, 
+        org.bukkit.boss.BarStyle.SEGMENTED_12
+    );
+    
+    bossBar.addPlayer(player);
+    combatBars.put(player, bossBar);
 
     MovecraftCombat.getInstance().getLogger().info(player.getName() + " è entrato in combattimento.");
 }
